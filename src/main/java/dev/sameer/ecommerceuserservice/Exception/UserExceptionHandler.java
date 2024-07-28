@@ -26,4 +26,13 @@ public class UserExceptionHandler {
         );
         return new ResponseEntity<>(exceptionResponseDTO, HttpStatus.UNAUTHORIZED);
     }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ExceptionResponseDTO> handlesInvalidToken(InvalidTokenException invalidTokenException) {
+        ExceptionResponseDTO exceptionResponseDTO = new ExceptionResponseDTO(
+                invalidTokenException.getMessage(),
+                498
+        );
+        return new ResponseEntity<>(exceptionResponseDTO, HttpStatus.NOT_FOUND);
+    }
 }

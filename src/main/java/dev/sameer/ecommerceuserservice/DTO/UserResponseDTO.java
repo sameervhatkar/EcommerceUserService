@@ -14,7 +14,6 @@ public class UserResponseDTO {
     private String userName;
     private String userEmail;
     private List<RoleResponseDTO> roleResponseDTOList;
-    private String userToken;
 
     public static UserResponseDTO convertUserEntityToUserDTO(User user) {
         UserResponseDTO userResponseDTO = new UserResponseDTO();
@@ -25,8 +24,6 @@ public class UserResponseDTO {
         for(Role role : roleList)
             roleResponseDTOS.add(RoleResponseDTO.convertRoleEntityToRoleDTO(role));
         userResponseDTO.setRoleResponseDTOList(roleResponseDTOS);
-
-        userResponseDTO.setUserToken(user.getToken());
         return userResponseDTO;
     }
 }
