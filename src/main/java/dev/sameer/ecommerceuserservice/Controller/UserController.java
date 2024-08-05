@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-@RequiredArgsConstructor
+
 @RestController
 public class UserController {
 
@@ -33,12 +33,12 @@ public class UserController {
         return ResponseEntity.ok(userService.logIn(loginRequestDTO));
     }
 
-    @GetMapping("/validate")
+    @GetMapping("/authenticate")
     public ResponseEntity<Boolean> validate(@RequestHeader("Authorization") String authToken) {
         return ResponseEntity.ok(userService.validate(authToken));
     }
 
-    @PostMapping("/logout")
+    @PostMapping( "/logout")
     public ResponseEntity<Boolean> logout(@RequestHeader("Authorization") String authToken) {
         return ResponseEntity.ok(userService.logout(authToken));
     }
@@ -49,17 +49,17 @@ public class UserController {
     }
 
     @GetMapping("getUser/{userId}")
-    public ResponseEntity<UserResponseDTO> getUser(@PathVariable UUID userId) {
+    public ResponseEntity<UserResponseDTO> getUser(@RequestHeader("Authorization") String authToken, @PathVariable UUID userId) {
         return ResponseEntity.ok(userService.getUserById(userId));
     }
 
     @GetMapping("getUsers")
-    public ResponseEntity<List<UserResponseDTO>> getUser() {
+    public ResponseEntity<List<UserResponseDTO>> getUser(@RequestHeader("Authorization") String authToken) {
         return ResponseEntity.ok(userService.getUser());
     }
 
     @DeleteMapping("deleteUser/{userId}")
-    public ResponseEntity<Boolean> deleteUser(@PathVariable UUID userId) {
+    public ResponseEntity<Boolean> deleteUser(@RequestHeader("Authorization") String authToken, @PathVariable UUID userId) {
         return ResponseEntity.ok(userService.deleteUser(userId));
     }
 

@@ -11,8 +11,18 @@ import dev.sameer.ecommerceuserservice.Exception.InvalidTokenException;
 import dev.sameer.ecommerceuserservice.Exception.UserNotFoundException;
 import dev.sameer.ecommerceuserservice.Repository.RoleRepository;
 import dev.sameer.ecommerceuserservice.Repository.UserRepository;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,36 +30,51 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@Service
+@Component
 public class UserServiceImpl implements UserService {
 
 
+    private final CustomUserDetailsServiceImpl customUserDetailsServiceImpl;
     private UserRepository userRepository;
     private RoleRepository roleRepository;
+    private AuthenticationManager authenticationManager;
+    private JwtService jwtService;
+    private CustomUserDetailsService customUserDetailsService;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository) {
+    public UserServiceImpl(CustomUserDetailsServiceImpl customUserDetailsServiceImpl, UserRepository userRepository, RoleRepository roleRepository, AuthenticationManager authenticationManager, JwtService jwtService, CustomUserDetailsService customUserDetailsService) {
+        this.customUserDetailsServiceImpl = customUserDetailsServiceImpl;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
-
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
+        this.customUserDetailsService = customUserDetailsService;
     }
+
+
+
 
     @Override
     public UserResponseDTO signIn(SignInRequestDTO signInRequestDTO) {
-        User user = new User();
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        user.setUserName(signInRequestDTO.getUserName());
-        user.setUserEmail(signInRequestDTO.getUserEmail());
-        user.setUserPassword(encoder.encode(signInRequestDTO.getUserPassword()));
-        Role role = roleRepository.findRoleByUserRole(signInRequestDTO.getUserRole());
-        if(role == null) {
-            role = new Role();
-            role.setUserRole(signInRequestDTO.getUserRole());
-            roleRepository.save(role);
-        }
-        user.setUserRoles(List.of(role));
-        userRepository.save(user);
-        return UserResponseDTO.convertUserEntityToUserDTO(user);
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        String encodedPassword = passwordEncoder.encode(signInRequestDTO.getUserPassword());
+        List<Role> roleList = new ArrayList<>();
+        String roleName = signInRequestDTO.getUserRole();
+        Role role = roleRepository.findRoleByRole(roleName).orElseGet(
+                () -> roleRepository.save(new Role(roleName.toUpperCase()))
+        );
+        var user = User.builder()
+                .name(signInRequestDTO.getUserName())
+                .email(signInRequestDTO.getUserEmail())
+                .password(encodedPassword)
+                .roles(List.of(role))
+                .token(null)
+                .isEnabled(true)
+                .isAccountNonLocked(true)
+                .isCredentialsNonExpired(true)
+                .isAccountNonExpired(true)
+                .build();
+        return UserResponseDTO.convertUserEntityToUserDTO(userRepository.save(user));
     }
 
     @Override
@@ -57,23 +82,21 @@ public class UserServiceImpl implements UserService {
         if(validate(token))
         {
             BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-            User user = userRepository.findUserByUserEmail(userUpdateRequestDTO.getUserEmail()).orElseThrow(
+            User user = userRepository.findByEmail(userUpdateRequestDTO.getUserEmail()).orElseThrow(
                     () -> new UserNotFoundException("User not found")
             );
-            user.setUserName(userUpdateRequestDTO.getUserName());
-            user.setUserEmail(userUpdateRequestDTO.getUserEmail());
-            if (!encoder.matches(userUpdateRequestDTO.getUserPassword(), user.getUserPassword())) {
-                user.setUserPassword(encoder.encode(userUpdateRequestDTO.getUserPassword()));
+            user.setName(userUpdateRequestDTO.getUserName());
+            user.setEmail(userUpdateRequestDTO.getUserEmail());
+            if (!encoder.matches(userUpdateRequestDTO.getUserPassword(), user.getPassword())) {
+                user.setPassword(encoder.encode(userUpdateRequestDTO.getUserPassword()));
             }
-            Role role = roleRepository.findRoleByUserRole(userUpdateRequestDTO.getUserRole());
-            if (role == null) {
-                role = new Role();
-                role.setUserRole(userUpdateRequestDTO.getUserRole());
-                roleRepository.save(role);
-            }
-            List<Role> roleList = user.getUserRoles();
+            String roleName = userUpdateRequestDTO.getUserRole();
+            Role role = roleRepository.findRoleByRole(roleName.toUpperCase()).orElseGet(
+                    () ->roleRepository.save(new Role(roleName.toUpperCase()))
+            );
+            List<Role> roleList = user.getRoles();
             roleList.add(role);
-            user.setUserRoles(roleList);
+            user.setRoles(roleList);
             userRepository.save(user);
             return UserResponseDTO.convertUserEntityToUserDTO(user);
         }
@@ -82,40 +105,76 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseDTO logIn(LoginRequestDTO loginRequestDTO) {
-
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        User user = userRepository.findUserByUserEmail(loginRequestDTO.getUserEmail()).orElseThrow(
-                () -> new UserNotFoundException("User with the Email Id: " + loginRequestDTO.getUserEmail() + " not found")
-        );
-
-        if(encoder.matches(loginRequestDTO.getUserPassword(), user.getUserPassword())) {
-            //Generate the Token
-            String token = encoder.encode(user.getUserName() + user.getUserEmail() + LocalDateTime.now());
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequestDTO.getEmail(),
+                            loginRequestDTO.getPassword()
+                    )
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            User user = userRepository.findByEmail(loginRequestDTO.getEmail()).get();
+            String token = jwtService.generateToken(loginRequestDTO.getEmail(), user.getRoles().get(0).getRole());
             user.setToken(token);
+            return UserResponseDTO.convertUserEntityToUserDTO(userRepository.save(user));
+        } catch (Exception ex) {
+            throw new UserNotFoundException("Authentication failed");
         }
-        else
-            throw new InvalidCredential("User Email or Password are incorrect");
-        userRepository.save(user);
-        return UserResponseDTO.convertUserEntityToUserDTO(user);
-
     }
+
+
 
     @Override
     public boolean validate(String token) {
-        User user = userRepository.findByToken(token).orElseThrow(
-                () -> new InvalidTokenException("Token is invalid")
-        );
-        return true;
+        try {
+            // Ensure the token starts with the expected prefix
+            if (token != null && token.startsWith("Bearer ")) {
+                String jwtToken = token.substring(7);
+                String userEmail = jwtService.extractUsername(jwtToken);
+
+                // Load user details from the extracted username
+                UserDetails userDetails = customUserDetailsService.loadUserByUsername(userEmail);
+
+                // Validate the token against the user details
+                return jwtService.validateToken(jwtToken, userDetails);
+            }
+        } catch (MalformedJwtException e) {
+            System.err.println("Malformed JWT: " + e.getMessage());
+        } catch (ExpiredJwtException e) {
+            System.err.println("Expired JWT: " + e.getMessage());
+        } catch (SignatureException e) {
+            System.err.println("Invalid JWT signature: " + e.getMessage());
+        } catch (UnsupportedJwtException e) {
+            System.err.println("Unsupported JWT: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            System.err.println("JWT claims string is empty: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Token validation failed: " + e.getMessage());
+        }
+        // Return false if token is invalid or any exception occurs
+        return false;
     }
 
     @Override
     public boolean logout(String token) {
-        User user = userRepository.findByToken(token).orElseThrow(
-                () -> new InvalidTokenException("Token is invalid")
-        );
-        user.setToken(null);
-        userRepository.save(user);
-        return true;
+        String userEmail = "";
+        if (token != null && token.startsWith("Bearer ")) {
+            String jwtToken = token.substring(7);
+            userEmail = jwtService.extractUsername(jwtToken);
+
+            // Load user details from the extracted username
+            UserDetails userDetails = customUserDetailsService.loadUserByUsername(userEmail);
+
+            // Validate the token against the user details
+            if(jwtService.validateToken(jwtToken, userDetails)) {
+                User user = userRepository.findByEmail(userEmail).get();
+                user.setToken(null);
+                userRepository.save(user);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
@@ -144,7 +203,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserByUserEmail(String userEmail) {
-        User user = userRepository.findUserByUserEmail(userEmail).orElseThrow(
+        User user = userRepository.findByEmail(userEmail).orElseThrow(
                 () -> new UserNotFoundException("User not found")
         );
         return user;

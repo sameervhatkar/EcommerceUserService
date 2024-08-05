@@ -17,9 +17,9 @@ public class UserResponseDTO {
 
     public static UserResponseDTO convertUserEntityToUserDTO(User user) {
         UserResponseDTO userResponseDTO = new UserResponseDTO();
-        userResponseDTO.setUserName(user.getUserName());
-        userResponseDTO.setUserEmail(user.getUserEmail());
-        List<Role> roleList = user.getUserRoles();
+        userResponseDTO.setUserName(user.getName());
+        userResponseDTO.setUserEmail(user.getEmail());
+        List<Role> roleList = user.getRoles();
         List<RoleResponseDTO> roleResponseDTOS = new ArrayList<>();
         for(Role role : roleList)
             roleResponseDTOS.add(RoleResponseDTO.convertRoleEntityToRoleDTO(role));

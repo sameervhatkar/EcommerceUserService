@@ -8,6 +8,12 @@ import lombok.Setter;
 @Setter
 @Entity(name = "ECOM_ROLE")
 public class Role extends BaseModel {
-    private String userRole;
-    private String description;
+    private String role;
+
+    public Role(String role) {
+        this.role = role;
+    }
+
+    public Role() {
+    }
 }

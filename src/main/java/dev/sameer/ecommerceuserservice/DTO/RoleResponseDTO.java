@@ -11,7 +11,7 @@ public class RoleResponseDTO {
 
     public static RoleResponseDTO convertRoleEntityToRoleDTO(Role role) {
         RoleResponseDTO roleResponseDTO = new RoleResponseDTO();
-        roleResponseDTO.setRole(role.getUserRole());
+        roleResponseDTO.setRole(role.getRole());
         return roleResponseDTO;
     }
 }
