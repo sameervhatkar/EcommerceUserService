@@ -14,11 +14,11 @@ import java.util.UUID;
 public interface UserService {
     UserResponseDTO signIn(SignInRequestDTO signInRequestDTO);
     UserResponseDTO logIn(LoginRequestDTO loginRequestDTO);
-    boolean validate(String token);
+
+
     boolean logout(String token);
-    UserResponseDTO updateUser(UserUpdateRequestDTO userUpdateRequestDTO, String token);
+    UserResponseDTO updateUser(UserUpdateRequestDTO userUpdateRequestDTO);
     UserResponseDTO getUserById(UUID userId);
     List<UserResponseDTO> getUser();
     boolean deleteUser(UUID userId);
-    User getUserByUserEmail(String userEmail);
 }

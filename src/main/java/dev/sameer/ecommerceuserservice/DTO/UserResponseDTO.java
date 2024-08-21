@@ -13,7 +13,8 @@ import java.util.List;
 public class UserResponseDTO {
     private String userName;
     private String userEmail;
-    private List<RoleResponseDTO> roleResponseDTOList;
+    private List<RoleResponseDTO> role;
+    private String token;
 
     public static UserResponseDTO convertUserEntityToUserDTO(User user) {
         UserResponseDTO userResponseDTO = new UserResponseDTO();
@@ -23,7 +24,8 @@ public class UserResponseDTO {
         List<RoleResponseDTO> roleResponseDTOS = new ArrayList<>();
         for(Role role : roleList)
             roleResponseDTOS.add(RoleResponseDTO.convertRoleEntityToRoleDTO(role));
-        userResponseDTO.setRoleResponseDTOList(roleResponseDTOS);
+        userResponseDTO.setRole(roleResponseDTOS);
+        userResponseDTO.setToken(user.getToken());
         return userResponseDTO;
     }
 }

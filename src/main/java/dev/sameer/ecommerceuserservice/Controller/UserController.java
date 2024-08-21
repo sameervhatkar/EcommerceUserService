@@ -28,24 +28,26 @@ public class UserController {
         return ResponseEntity.ok(userService.signIn(signInRequestDTO));
     }
 
-    @PostMapping("/login")
+    @GetMapping("/login")
     public ResponseEntity<UserResponseDTO> logIn(@RequestBody LoginRequestDTO loginRequestDTO) {
         return ResponseEntity.ok(userService.logIn(loginRequestDTO));
     }
 
+    //Using to 3rd Party Service (Product, Order, Payment)
     @GetMapping("/authenticate")
-    public ResponseEntity<Boolean> validate(@RequestHeader("Authorization") String authToken) {
-        return ResponseEntity.ok(userService.validate(authToken));
+    public ResponseEntity<Boolean> validate() {
+        return ResponseEntity.ok(true);
     }
-
-    @PostMapping( "/logout")
-    public ResponseEntity<Boolean> logout(@RequestHeader("Authorization") String authToken) {
-        return ResponseEntity.ok(userService.logout(authToken));
+    //Here we are passing the token in endpoints and in the arguments
+    //In the endpoints because we want to validate the token
+    @PostMapping( "/logout/{token}")
+    public ResponseEntity<Boolean> logout(@PathVariable String token) {
+        return ResponseEntity.ok(userService.logout(token));
     }
 
     @PutMapping("/updateUser")
-    public ResponseEntity<UserResponseDTO> updateUser(@RequestHeader("Authorization") String authToken, @RequestBody UserUpdateRequestDTO userUpdateRequestDTO) {
-        return ResponseEntity.ok(userService.updateUser(userUpdateRequestDTO, authToken));
+    public ResponseEntity<UserResponseDTO> updateUser(@RequestBody UserUpdateRequestDTO userUpdateRequestDTO) {
+        return ResponseEntity.ok(userService.updateUser(userUpdateRequestDTO));
     }
 
     @GetMapping("getUser/{userId}")
@@ -54,17 +56,12 @@ public class UserController {
     }
 
     @GetMapping("getUsers")
-    public ResponseEntity<List<UserResponseDTO>> getUser(@RequestHeader("Authorization") String authToken) {
+    public ResponseEntity<List<UserResponseDTO>> getUser() {
         return ResponseEntity.ok(userService.getUser());
     }
 
     @DeleteMapping("deleteUser/{userId}")
-    public ResponseEntity<Boolean> deleteUser(@RequestHeader("Authorization") String authToken, @PathVariable UUID userId) {
+    public ResponseEntity<Boolean> deleteUser(@PathVariable UUID userId) {
         return ResponseEntity.ok(userService.deleteUser(userId));
     }
-
-
-
-
-
 }
