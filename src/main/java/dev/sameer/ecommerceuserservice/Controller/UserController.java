@@ -1,9 +1,6 @@
 package dev.sameer.ecommerceuserservice.Controller;
 
-import dev.sameer.ecommerceuserservice.DTO.LoginRequestDTO;
-import dev.sameer.ecommerceuserservice.DTO.SignInRequestDTO;
-import dev.sameer.ecommerceuserservice.DTO.UserResponseDTO;
-import dev.sameer.ecommerceuserservice.DTO.UserUpdateRequestDTO;
+import dev.sameer.ecommerceuserservice.DTO.*;
 import dev.sameer.ecommerceuserservice.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,4 +61,10 @@ public class UserController {
     public ResponseEntity<Boolean> deleteUser(@PathVariable UUID userId) {
         return ResponseEntity.ok(userService.deleteUser(userId));
     }
+
+    @GetMapping("/extractUser")
+    public ResponseEntity<UserClientResponseDTO> extractUserId(@RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(userService.extractUserId(token));
+    }
+
 }

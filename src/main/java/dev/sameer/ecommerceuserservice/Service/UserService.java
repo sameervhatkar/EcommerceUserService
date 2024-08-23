@@ -1,9 +1,6 @@
 package dev.sameer.ecommerceuserservice.Service;
 
-import dev.sameer.ecommerceuserservice.DTO.LoginRequestDTO;
-import dev.sameer.ecommerceuserservice.DTO.SignInRequestDTO;
-import dev.sameer.ecommerceuserservice.DTO.UserResponseDTO;
-import dev.sameer.ecommerceuserservice.DTO.UserUpdateRequestDTO;
+import dev.sameer.ecommerceuserservice.DTO.*;
 import dev.sameer.ecommerceuserservice.Entity.User;
 import org.springframework.stereotype.Service;
 
@@ -21,4 +18,6 @@ public interface UserService {
     UserResponseDTO getUserById(UUID userId);
     List<UserResponseDTO> getUser();
     boolean deleteUser(UUID userId);
+
+    UserClientResponseDTO extractUserId(String token);
 }

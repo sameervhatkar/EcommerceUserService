@@ -1,9 +1,6 @@
 package dev.sameer.ecommerceuserservice.Service;
 
-import dev.sameer.ecommerceuserservice.DTO.LoginRequestDTO;
-import dev.sameer.ecommerceuserservice.DTO.SignInRequestDTO;
-import dev.sameer.ecommerceuserservice.DTO.UserResponseDTO;
-import dev.sameer.ecommerceuserservice.DTO.UserUpdateRequestDTO;
+import dev.sameer.ecommerceuserservice.DTO.*;
 import dev.sameer.ecommerceuserservice.Entity.Role;
 import dev.sameer.ecommerceuserservice.Entity.User;
 import dev.sameer.ecommerceuserservice.Exception.UserNotFoundException;
@@ -121,5 +118,13 @@ public class UserServiceImpl implements UserService {
         );
         userRepository.delete(user);
         return true;
+    }
+
+    @Override
+    public UserClientResponseDTO extractUserId(String token) {
+        token = token.substring(7);
+        String userEmail = jwtService.extractUsername(token);
+        User user = userRepository.findByEmail(userEmail).get();
+        return UserClientResponseDTO.convertUserToUserClientResponseDTO(user);
     }
 }
