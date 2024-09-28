@@ -71,8 +71,8 @@ public class Role {
 * Get All Users: GET /getUsers
   - Response: List<UserResponseDTO>
 * Delete User: DELETE /deleteUser/{userId}
-	-	Path Variable: UUID userId
-	-	Response: Boolean
+  - Path Variable: UUID userId
+  - Response: Boolean
 
 ## Services
 
